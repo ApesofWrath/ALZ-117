@@ -59,7 +59,7 @@ void processImage(){
 
 		cap.read(matOriginal);
 
-		//matOriginal = matTest;
+		
 		cvtColor(matOriginal, matGray, COLOR_BGR2GRAY);
 
 //		GaussianBlur(matOriginal, matBlurred, Size(7,7), 0, 0); 
@@ -72,7 +72,7 @@ void processImage(){
 
 		findContours(matThreshCopy, contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
 
-#if real
+
 
 		int xVals [2];
                 int yVals [2];
@@ -183,57 +183,6 @@ void processImage(){
 		sprintf(DistanceCharArr, "Distance: %f", distance);
 		putText(matOriginal, DistanceCharArr, cvPoint(30,60), FONT_HERSHEY_COMPLEX_SMALL, 0.8, RED, 1, CV_AA);
 
-#else
-		int xVals [2];
-		int yVals [2];
-
-		int index = 0;
-
-		for(int i = 0; i < contours.size(); i++){
-
-			vector<Point> matOfPoint = contours[i];
-
-                        vector<Point> approxPoly;
-
-                        approxPolyDP(matOfPoint, approxPoly, arcLength(matOfPoint, true) * 0.02, true);
-
-                        if(approxPoly.size() == 4){
-
-				Rect rec = boundingRect(contours[i]);
-
-				if ((abs((rec.height/rec.width) - 2) < 0.3)){// &&  (rec.height > 20 && rec.width > 10)){ //spacial requirements
-
-					rectangle(matOriginal, rec.br(), rec.tl(), RED);
-
-					if (index == 0){
-						xVals[index] = rec.br().x;
-						yVals[index] = rec.br().y;
-					}else if (index == 1){
-
-						xVals[index] = rec.tl().x;
-						yVals[index] = rec.tl().y;
-
-					}
-
-					index++;
-
-                        	}else{
-
-					contours.erase(contours.begin() + i); //doesnt work, keep in code
-
-				}
-			}
-
-
-			 
-		}//end of for loop
-
-		int avgX = (xVals[0] + xVals[1])/2;
-		int avgY = (yVals[0] + yVals[1])/2;
-
-		circle(matOriginal, Point(avgX, avgY), 10, YELLOW, 2, 8, 0);
-		
-#endif
 
 
 		imshow("Thresh", matThresh);
@@ -250,6 +199,7 @@ void processImage(){
 
 int main(){
 
+//This initalizes the exposure and contrast for the camera 
 system("xterm -hold -e ' v4l2-ctl -c exposure_auto=1&&v4l2-ctl --set-ctrl exposure_absolute=18 && v4l2-ctl --set-ctrl contrast=255 && kill| less' &");
 
 	cap.open(0);
