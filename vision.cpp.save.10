@@ -1,0 +1,273 @@
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <iostream>
+#include <cmath>
+#include <stdio.h>
+#include "include/networktables/NetworkTable.h"
+//#include <opencv2/opencv.hpp>
+
+
+
+
+#define real true
+
+//This is here for later cmake -DCUDA_USE_STATIC_CUDA_RUNTIME=OFF .
+using namespace cv;
+
+
+cv::Mat  matOriginal,matThresh, matGray, matThreshCopy, input;
+cv::Mat matColor, matBlurred, matOrigCopy, matTest;
+
+
+VideoCapture cap;
+
+
+const Scalar YELLOW(0, 255, 255),
+	RED(0, 0, 255),
+	GREEN(33, 255, 0),
+	MIDDLEGROUND(255, 0, 0),
+	LOWER_BOUNDS(0, 40, 0),
+	UPPER_BOUNDS(40, 255, 40);
+
+ double normalize360(double angle) {
+		while (angle >= 360.0) {
+			angle -= 360.0;
+		}
+		while (angle < 0.0) {
+			angle += 360.0;
+		}
+		return angle;
+}
+
+
+void NetworkTables(double azi,double dist) {
+
+NetworkTable::SetClientMode();
+NetworkTable::SetTeam(668);
+auto table = NetworkTable::GetTable("SmartDashboard");
+table->PutNumber("Azimuth",azi);
+table->PutNumber("Distance",dist);
+
+
+}
+
+void processImage(){
+
+	vector<vector<Point> > contours;
+
+	while(true){
+
+		contours.clear();
+
+		cap.read(input);
+
+//		Point2f center(input.cols/2.0, input.rows/2.0);
+//                Mat rot_mat = getRotationMatrix2D(center, 180, 1.0);
+//		warpAffine(input, matOriginal, rot_mat, input.size());
+	
+		cv::flip(input, matOriginal, -1);	
+		cvtColor(matOriginal, matGray, COLOR_BGR2GRAY);
+
+//		GaussianBlur(matOriginal, matBlurred, Size(7,7), 0, 0); 
+
+//		inRange(matBlurred, LOWER_BOUNDS, UPPER_BOUNDS, matGray);
+
+		threshold(matGray, matThresh, 24.0, 255, THRESH_BINARY);
+//		Mat x = matThresh.clone();
+		threshold(matGray, matThreshCopy, 24.0, 255, THRESH_BINARY);
+
+		findContours(matThreshCopy, contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
+
+
+
+		int xVals [2];
+                int yVals [2];
+		int side1 [2];
+                int side2 [2];
+
+                int index = 0;
+		double topOfBox = 0;
+		double bottomOfBox = 0;
+		for(int i = 0; i < contours.size(); i++){
+
+			vector<Point> matOfPoint = contours[i];
+
+			vector<Point> approxPoly;
+
+			approxPolyDP(matOfPoint, approxPoly, arcLength(matOfPoint, true) * .02, true);
+
+			if(approxPoly.size() == 4 ){
+
+				Rect rec = boundingRect(contours[i]);
+
+				double ratio = (double)rec.height/(double)rec.width;
+
+				if(ratio<3&&ratio>1.7){
+					
+				
+					int G = (int)matOriginal.at<Vec3b>((int)((rec.tl().y + rec.br().y)/2), (int)((rec.br().x + rec.tl().x)/2))[1];
+					int B = (int)matOriginal.at<Vec3b>((int)((rec.tl().y + rec.br().y)/2), (int)((rec.br().x + rec.tl().x)/2))[0];
+					int R = (int)matOriginal.at<Vec3b>((int)((rec.tl().y + rec.br().y)/2), (int)((rec.br().x + rec.tl().x)/2))[2];
+									
+				//	std::cout <<" B:"<< (int)matOriginal.at<Vec3b>((int)((rec.tl().y + rec.br().y)/2), (int)((rec.br().x + rec.tl().x)/2))[0];
+                                //        std::cout <<" G:"<< (int)matOriginal.at<Vec3b>((int)((rec.tl().y + rec.br().y)/2), (int)((rec.br().x + rec.tl().x)/2))[1];
+                                //        std::cout <<" R:"<< (int)matOriginal.at<Vec3b>((int)((rec.tl().y + rec.br().y)/2), (int)((rec.br().x + rec.tl().x)/2))[2]<<std::endl;
+					//This code prints out the BGR values for the center pixel that we reference for 
+						if(G>100&&R<20){
+					//std::cout <<" Ratio: "<< ratio<<std::endl;
+					double area = (double)rec.height * (double)rec.width;
+					std::cout <<" Area : "<< area<<std::endl;
+				if(area > 500){	
+					rectangle(matOriginal, rec.br(), rec.tl(), RED);
+					circle(matOriginal, Point((int)((rec.br().x + rec.tl().x)/2), (int)((rec.tl().y + rec.br().y)/2)), 10, RED, 2, 8, 0);
+					
+					
+ 
+					if (index == 0){
+                                                xVals[index] = rec.br().x;
+                                                yVals[index] = rec.br().y;
+						side1[0] = rec.br().y;
+						side1[1] = rec.tl().y;
+						
+                                        }else if (index == 1){
+
+                                                xVals[index] = rec.tl().x;
+                                                yVals[index] = rec.tl().y;
+						side2[0] = rec.br().y;
+						side2#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <iostream>
+#include <cmath>
+#include <stdio.h>
+#include "include/networktables/NetworkTable.h"
+//#include <opencv2/opencv.hpp>
+
+
+
+
+#define real true
+
+//This is here for later cmake -DCUDA_USE_STATIC_CUDA_RUNTIME=OFF .
+using namespace cv;
+
+
+cv::Mat  matOriginal,matThresh, matGray, matThreshCopy, input;
+cv::Mat matColor, matBlurred, matOrigCopy, matTest;
+
+
+VideoCapture cap;
+
+
+const Scalar YELLOW(0, 255, 255),
+	RED(0, 0, 255),
+	GREEN(33, 255, 0),
+	MIDDLEGROUND(255, 0, 0),
+	LOWER_BOUNDS(0, 40, 0),
+	UPPER_BOUNDS(40, 255, 40);
+
+ double normalize360(double angle) {
+		while (angle >= 360.0) {
+			angle -= 360.0;
+		}
+		while (angle < 0.0) {
+			angle += 360.0;
+		}
+		return angle;
+}
+
+
+void NetworkTables(double azi,double dist) {
+
+NetworkTable::SetClientMode();
+NetworkTable::SetTeam(668);
+auto table = NetworkTable::GetTable("SmartDashboard");
+table->PutNumber("Azimuth",azi);
+table->PutNumber("Distance",dist);
+
+
+}
+
+void processImage(){
+
+	vector<vector<Point> > contours;
+
+	while(true){
+
+		contours.clear();
+
+		cap.read(input);
+
+//		Point2f center(input.cols/2.0, input.rows/2.0);
+//                Mat rot_mat = getRotationMatrix2D(center, 180, 1.0);
+//		warpAffine(input, matOriginal, rot_mat, input.size());
+	
+		cv::flip(input, matOriginal, -1);	
+		cvtColor(matOriginal, matGray, COLOR_BGR2GRAY);
+
+//		GaussianBlur(matOriginal, matBlurred, Size(7,7), 0, 0); 
+
+//		inRange(matBlurred, LOWER_BOUNDS, UPPER_BOUNDS, matGray);
+
+		threshold(matGray, matThresh, 24.0, 255, THRESH_BINARY);
+//		Mat x = matThresh.clone();
+		threshold(matGray, matThreshCopy, 24.0, 255, THRESH_BINARY);
+
+		findContours(matThreshCopy, contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
+
+
+
+		int xVals [2];
+                int yVals [2];
+		int side1 [2];
+                int side2 [2];
+
+                int index = 0;
+		double topOfBox = 0;
+		double bottomOfBox = 0;
+		for(int i = 0; i < contours.size(); i++){
+
+			vector<Point> matOfPoint = contours[i];
+
+			vector<Point> approxPoly;
+
+			approxPolyDP(matOfPoint, approxPoly, arcLength(matOfPoint, true) * .02, true);
+
+			if(approxPoly.size() == 4 ){
+
+				Rect rec = boundingRect(contours[i]);
+
+				double ratio = (double)rec.height/(double)rec.width;
+
+				if(ratio<3&&ratio>1.7){
+					
+				
+					int G = (int)matOriginal.at<Vec3b>((int)((rec.tl().y + rec.br().y)/2), (int)((rec.br().x + rec.tl().x)/2))[1];
+					int B = (int)matOriginal.at<Vec3b>((int)((rec.tl().y + rec.br().y)/2), (int)((rec.br().x + rec.tl().x)/2))[0];
+					int R = (int)matOriginal.at<Vec3b>((int)((rec.tl().y + rec.br().y)/2), (int)((rec.br().x + rec.tl().x)/2))[2];
+									
+				//	std::cout <<" B:"<< (int)matOriginal.at<Vec3b>((int)((rec.tl().y + rec.br().y)/2), (int)((rec.br().x + rec.tl().x)/2))[0];
+                                //        std::cout <<" G:"<< (int)matOriginal.at<Vec3b>((int)((rec.tl().y + rec.br().y)/2), (int)((rec.br().x + rec.tl().x)/2))[1];
+                                //        std::cout <<" R:"<< (int)matOriginal.at<Vec3b>((int)((rec.tl().y + rec.br().y)/2), (int)((rec.br().x + rec.tl().x)/2))[2]<<std::endl;
+					//This code prints out the BGR values for the center pixel that we reference for 
+						if(G>100&&R<20){
+					//std::cout <<" Ratio: "<< ratio<<std::endl;
+					double area = (double)rec.height * (double)rec.width;
+					std::cout <<" Area : "<< area<<std::endl;
+				if(area > 500){	
+					rectangle(matOriginal, rec.br(), rec.tl(), RED);
+					circle(matOriginal, Point((int)((rec.br().x + rec.tl().x)/2), (int)((rec.tl().y + rec.br().y)/2)), 10, RED, 2, 8, 0);
+					
+					
+ 
+					if (index == 0){
+                                                xVals[index] = rec.br().x;
+                                                yVals[index] = rec.br().y;
+						side1[0] = rec.br().y;
+						side1[1] = rec.tl().y;
+						
+                                        }else if (index == 1){
+
+                                                xVals[index] = rec.tl().x;
+                                                yVals[index] = rec.tl().y;
+						side2[0] = rec.br().y;
+						side2

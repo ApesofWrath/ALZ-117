@@ -4,7 +4,7 @@
 #include <cmath>
 #include <stdio.h>
 #include "include/networktables/NetworkTable.h"
-
+//#include <opencv2/opencv.hpp>
 
 
 
@@ -15,7 +15,7 @@
 using namespace cv;
 
 
-cv::Mat matOriginal, matThresh, matGray, matThreshCopy;
+cv::Mat  matOriginal,matThresh, matGray, matThreshCopy, input, matFlipped;
 cv::Mat matColor, matBlurred, matOrigCopy, matTest;
 
 
@@ -40,11 +40,13 @@ const Scalar YELLOW(0, 255, 255),
 }
 
 
-void NetworkTables(double azi) {
+void NetworkTables(double azi,double dist) {
+
 NetworkTable::SetClientMode();
 NetworkTable::SetTeam(668);
 auto table = NetworkTable::GetTable("SmartDashboard");
 table->PutNumber("Azimuth",azi);
+table->PutNumber("Distance",dist);
 
 
 }
@@ -57,17 +59,22 @@ void processImage(){
 
 		contours.clear();
 
-		cap.read(matOriginal);
+		cap.read(input);
 
-		
+//		Point2f center(input.cols/2.0, input.rows/2.0);
+//                Mat rot_mat = getRotationMatrix2D(center, 180, 1.0);
+//		warpAffine(input, matOriginal, rot_mat, input.size());
+	
+		cv::flip(input, matFlipped, -1);
+ 		GaussianBlur(matFlipped, matOriginal, Size(5,5), 0, 0); 	
 		cvtColor(matOriginal, matGray, COLOR_BGR2GRAY);
 
-//		GaussianBlur(matOriginal, matBlurred, Size(7,7), 0, 0); 
+	 
 
 //		inRange(matBlurred, LOWER_BOUNDS, UPPER_BOUNDS, matGray);
 
 		threshold(matGray, matThresh, 16.0, 255, THRESH_BINARY);
-
+//		Mat x = matThresh.clone();
 		threshold(matGray, matThreshCopy, 16.0, 255, THRESH_BINARY);
 
 		findContours(matThreshCopy, contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
@@ -76,9 +83,12 @@ void processImage(){
 
 		int xVals [2];
                 int yVals [2];
+		int side1 [2];
+                int side2 [2];
 
                 int index = 0;
-
+		double topOfBox = 0;
+		double bottomOfBox = 0;
 		for(int i = 0; i < contours.size(); i++){
 
 			vector<Point> matOfPoint = contours[i];
@@ -92,39 +102,52 @@ void processImage(){
 				Rect rec = boundingRect(contours[i]);
 
 				double ratio = (double)rec.height/(double)rec.width;
-					if(ratio<3&&ratio>1.7){
+
+				if(ratio<3&&ratio>1.7){
 					
 				
 					int G = (int)matOriginal.at<Vec3b>((int)((rec.tl().y + rec.br().y)/2), (int)((rec.br().x + rec.tl().x)/2))[1];
 					int B = (int)matOriginal.at<Vec3b>((int)((rec.tl().y + rec.br().y)/2), (int)((rec.br().x + rec.tl().x)/2))[0];
+
+					  double area = (double)rec.height * (double)rec.width;
 					int R = (int)matOriginal.at<Vec3b>((int)((rec.tl().y + rec.br().y)/2), (int)((rec.br().x + rec.tl().x)/2))[2];
-				NetworkTable::SetTeam(668);	
-
-					//This code prints out the BGR values for the center pixel that we reference for 
-					
-					if(G>200&&R<10){
-
+				if(area > 100){ 
+					 if(G>150&&R<20){
 					std::cout <<" B:"<< (int)matOriginal.at<Vec3b>((int)((rec.tl().y + rec.br().y)/2), (int)((rec.br().x + rec.tl().x)/2))[0];
-					std::cout <<" G:"<< (int)matOriginal.at<Vec3b>((int)((rec.tl().y + rec.br().y)/2), (int)((rec.br().x + rec.tl().x)/2))[1];
-					std::cout <<" R:"<< (int)matOriginal.at<Vec3b>((int)((rec.tl().y + rec.br().y)/2), (int)((rec.br().x + rec.tl().x)/2))[2];
-					std::cout <<" Ratio: "<< ratio<<std::endl;
-					
-					
+                                        std::cout <<" G:"<< (int)matOriginal.at<Vec3b>((int)((rec.tl().y + rec.br().y)/2), (int)((rec.br().x + rec.tl().x)/2))[1];
+                                        std::cout <<" R:"<< (int)matOriginal.at<Vec3b>((int)((rec.tl().y + rec.br().y)/2), (int)((rec.br().x + rec.tl().x)/2))[2]<<std::endl;
+					//This code prints out the BGR values for the center pixel that we reference for 
+						
+					//std::cout <<" Ratio: "<< ratio<<std::endl;
+//					double area = (double)rec.height * (double)rec.width;
+					std::cout <<" Area : "<< area<<std::endl;
+				
 					rectangle(matOriginal, rec.br(), rec.tl(), RED);
 					circle(matOriginal, Point((int)((rec.br().x + rec.tl().x)/2), (int)((rec.tl().y + rec.br().y)/2)), 10, RED, 2, 8, 0);
 					
 					
  
-					if (index == 0){
-                                                xVals[index] = rec.br().x;
+					if (index == 0){                                       
+ 				        xVals[index] = rec.br().x;
                                                 yVals[index] = rec.br().y;
+						side1[0] = rec.br().y;
+						side1[1] = rec.tl().y;
+						
                                         }else if (index == 1){
-
-                                                xVals[index] = rec.tl().x;
-                                                yVals[index] = rec.tl().y;
-
+						
+						 xVals[index] = rec.tl().x;
+						
+					                                                yVals[index] = rec.tl().y;
+					
+						
+						side2[0] = rec.br().y;
+						
+						
+						side2[1] = rec.tl().y;
+						
+					}
                                        		}
-					} // if g>100
+				} // if g>100
 
                                         index++;
 				} // aspect ratio?
@@ -132,17 +155,40 @@ void processImage(){
 			} // poly size?
 		} // for contours.com
 	
-		
+		//Drawing Center Point
 		double avgX = (xVals[0] + xVals[1])/2;
+
                 double avgY = (yVals[0] + yVals[1])/2; 
+
+
+		
+
+
 
 		circle(matOriginal, Point(avgX, avgY), 10, RED, 2, 8, 0);
 
-		double CAMERA_ANGLE = 21.5;
+		//Square ratio comparison
+		double s1 = side1[0]-side1[1];	
+		double s2 = side2[0]-side2[1];
+
+		double SquareRatio = s1/s2;
+
+		
+//		std::cout <<" Ratio: "<<SquareRatio<<std::endl;
+//		int angle = (-176.2673*SquareRatio)+177.7535;
+//		std::cout <<" Angle: "<<angle<<std::endl;
+		
+
+
+
+
+		//Declaration of constants for calculations
+
+		double CAMERA_ANGLE = 7.5;
  		double HORIZONTAL_FOV = 82.15;
 		double VERTICAL_FOV = 82.15;
 		double TOP_TARGET_HEIGHT = 15.75;
-		double TOP_CAMERA_HEIGHT = .5;
+		double TOP_CAMERA_HEIGHT = 4.75;
 		double PI = 3.14159;
 
 		//This is calculating the Azimuth
@@ -151,44 +197,32 @@ void processImage(){
 
 
 		//This is calculating the distance from the target
-		double targetY = -((2 * (avgY/ matOriginal.rows)) - 1);
-
-		double distance = (TOP_TARGET_HEIGHT - TOP_CAMERA_HEIGHT)/ tan((targetY * VERTICAL_FOV / 2.0 + CAMERA_ANGLE) *PI /180);
-
-		NetworkTables(azi);
-		
-
-/*
-		double CameraAngleTan = tan ( CameraAngle * PI / 180.0 );
-		double DistanceOfPeg = 13.6875;
-		
- 		double distance =  avgY/CameraAngleTan;
-		std::cout <<distance<<std::endl; 
-*/
-
-		
-
-		
 	
+ 
+		double targetY = -((2 * (avgY/ matOriginal.rows)) - 1);
+		
+		double hyp = (TOP_TARGET_HEIGHT - TOP_CAMERA_HEIGHT)/ tan((targetY * VERTICAL_FOV / 2.0 + CAMERA_ANGLE) *PI /180);
 
+		double  distance = sqrt((hyp*hyp) - (162.5625)); 
 
 		//This prints the values to the picture
 		char AzimuthCharArr [80];
 		sprintf(AzimuthCharArr, "Azimuth: %f", azi); // this is old-school c. good to know gary's good for something.
-		
+//		std::cout <<"Azimuth"<<azi<<std::endl;
 		putText(matOriginal, AzimuthCharArr, cvPoint(30,30), FONT_HERSHEY_COMPLEX_SMALL, 0.8, RED, 1, CV_AA);
 
 
 		char DistanceCharArr [80];
 		sprintf(DistanceCharArr, "Distance: %f", distance);
+//		std::cout <<"Distance"<<distance<<std::endl;
 		putText(matOriginal, DistanceCharArr, cvPoint(30,60), FONT_HERSHEY_COMPLEX_SMALL, 0.8, RED, 1, CV_AA);
 
 
-
-		imshow("Thresh", matThresh);
-		//imshow("Center", matTest);
-		imshow("Original", matOriginal);
-
+		NetworkTables(azi,distance);
+//		imshow("Thresh", contours);
+//		imshow("Center", matTest);
+//		imshow("Original", matOriginal);
+//		VideoWriter::write(matOriginal);
 		if (waitKey(66) >= 0)
 			break; 
 
@@ -200,7 +234,7 @@ void processImage(){
 int main(){
 
 //This initalizes the exposure and contrast for the camera 
-system("xterm -hold -e ' v4l2-ctl -c exposure_auto=1&&v4l2-ctl --set-ctrl exposure_absolute=18 && v4l2-ctl --set-ctrl contrast=255 && kill| less' &");
+system("xterm -hold -e ' v4l2-ctl -c exposure_auto=1 && v4l2-ctl --set-ctrl exposure_absolute=20 && v4l2-ctl --set-ctrl contrast=255  && kill| less' &");
 
 	cap.open(0);
 
