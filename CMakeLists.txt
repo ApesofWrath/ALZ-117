@@ -12,8 +12,8 @@ add_library(libntcore STATIC IMPORTED)
 add_library(libwpiutil STATIC IMPORTED)
 
 
-set_property(TARGET libntcore PROPERTY IMPORTED_LOCATION /home/ubuntu/ALZ-117/Linux/arm/libntcore.a)
-set_property(TARGET libwpiutil PROPERTY IMPORTED_LOCATION /home/ubuntu/ALZ-117/Linux/arm/libwpiutil.a)
+set_property(TARGET libntcore PROPERTY IMPORTED_LOCATION /home/sean/Workspace/ALZ-117/Linux/arm/libntcore.a)
+set_property(TARGET libwpiutil PROPERTY IMPORTED_LOCATION /home/sean/Workspace/ALZ-117/Linux/arm/libwpiutil.a)
 
 add_executable(cv_vision vision.cpp)
 

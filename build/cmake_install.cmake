@@ -1,4 +1,4 @@
-# Install script for directory: /home/ubuntu/ALZ-117
+# Install script for directory: /home/sean/Workspace/ALZ-117
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -40,5 +40,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "/home/ubuntu/ALZ-117/build/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "/home/sean/Workspace/ALZ-117/build/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")

@@ -4,14 +4,15 @@ set(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_CXX
-  "/home/ubuntu/ALZ-117/vision.cpp" "/home/ubuntu/ALZ-117/build/CMakeFiles/cv_vision.dir/vision.cpp.o"
+  "/home/sean/Workspace/ALZ-117/vision.cpp" "/home/sean/Workspace/ALZ-117/build/CMakeFiles/cv_vision.dir/vision.cpp.o"
   )
 set(CMAKE_CXX_COMPILER_ID "GNU")
 
 # The include file search paths:
 set(CMAKE_CXX_TARGET_INCLUDE_PATH
-  "/usr/include/opencv"
   "../include"
+  "/usr/local/include"
+  "/usr/local/include/opencv"
   )
 
 # Targets to which this target links.
