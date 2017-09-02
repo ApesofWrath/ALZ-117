@@ -2,6 +2,7 @@
 #include "opencv2/highgui.hpp"
 #include "opencv2/imgproc.hpp"
 #include <iostream>
+#include <string>
 
 using namespace cv;
 using namespace std;
@@ -13,6 +14,10 @@ int sLowerLimit = 248;
 int vUpperLimit = 27;
 int vLowerLimit = 255;
 
+int avgR;
+int avgG;
+int avgB;
+
 VideoCapture cap;
 Mat rgbImg;
 Mat grayImg;
@@ -21,7 +26,10 @@ Mat drawing;
 
 bool setExposure= true;
 
-//sean is reallyy bad 
+//sean is reallyy bad
+
+
+
 
 
 void threshImageRGB(){
@@ -92,10 +100,31 @@ void threshImageHSV(){
 
 }
 
+double normalize360(double angle) {
+
+                while (angle >= 360.0) {
+                        angle -= 360.0;
+                }
+                while (angle < 0.0) {
+                        angle += 360.0;
+                }
+                return angle;
+}
+
+void findAzimuth(int x){
+        double HORIZONTAL_FOV = 82.15;
+        double targetX = (2* ((double)x /rgbImg.cols))-1;
+        double azi = normalize360((targetX)* HORIZONTAL_FOV / 2.0);
+        cout<<x<<endl;
+}
+
+
+
 void findTargets(){
 
-
-
+		int numOfTargets = 2;
+		int currentTarget = 0;
+		int centerPoints[numOfTargets][numOfTargets];
 		const Scalar RED(0, 0, 255);
 
 		vector <vector<Point>> contours;
@@ -114,18 +143,36 @@ void findTargets(){
 			int height = rect.br().y - rect.tl().y;
 			int width = rect.br().x - rect. tl().x;
 
+			int centerY = rect.tl().y - (height/2);
+			int centerX = rect.tl().y - (width/2);
 			//the first filter just aproximates things with 4 sides
-			if(approxPoly.size() == 4 ){
+			if(approxPoly.size() > 2 && approxPoly.size() < 10 ){
 
-			//Second filter is the area of the box. We can assume it is bigger than 			  500 pixels. That number is complelty made up and should be tuned
-				if((height*width)>500){
+			//Second filter is the area of the box. We can assume it is bigger than 100 pixels. That number is complelty made up and should be tuned
+				if((height*width)>100){
 
-				rectangle(rgbImg, rect.br(), rect.tl(), RED);
+					rectangle(rgbImg, rect.br(), rect.tl(), RED);
+					centerPoints[currentTarget][0] = centerX;
+					centerPoints[currentTarget][1] = centerY;
+
+					if(currentTarget >= numOfTargets){
+						currentTarget = 0;
+					}
 
 				}
 			}
 		}
+
+		int aziX = (centerPoints[0][0]+centerPoints[0][1])/2;
+		if(aziX < 0){
+			aziX=aziX*(-1);
+		}
+		findAzimuth(aziX);
+
 }
+
+
+
 
 
 int main(){
@@ -134,25 +181,24 @@ int main(){
 	while(true){
 
 		Mat bgrImg;
-		cap.read(bgrImg);
+		cap.read(rgbImg);
 
 		//convert the BGR Image to RGB off the bat to avoid  confusion
-		cvtColor(bgrImg, rgbImg, CV_BGR2RGB);
-
+		//cvtColor(bgrImg, rgbImg, CV_BGR2RGB);
+		GaussianBlur(rgbImg, rgbImg, Size(5,5), 0, 0); 
 		threshImageRGB();
 		findTargets();
 
 		imshow("Input", rgbImg);
-
-
+		imshow("Output", binaryImg);
 		if(setExposure){
-
-			system("v4l2-ctl -c exposure_auto=1 && v4l2-ctl --set-ctrl exposure_absolute=8 && v4l&& v4l2-ctl --set-ctrl contrast=255");
+			//Tune the exposure value before for every event
+			system("v4l2-ctl -c exposure_auto=1 && v4l2-ctl --set-ctrl exposure_absolute=50 && v4l&& v4l2-ctl --set-ctrl contrast=255");
 			setExposure = false;
 
 		}
 
-		if (waitKey(33) >= 0){
+		if (waitKey(66) >= 0){
 
 			break;
 
